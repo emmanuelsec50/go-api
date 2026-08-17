@@ -7,7 +7,7 @@ import (
 )
 
 type Order struct {
-	OderID      uint64     `json:"order_id"`
+	OrderID     uint64     `json:"order_id"`
 	CustomerID  uuid.UUID  `json:"customer_id"`
 	LineItems   []LineItem `json:"line_items"`
 	CreatedAt   *time.Time `json:"created_at"`
