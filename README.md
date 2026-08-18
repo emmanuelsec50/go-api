@@ -10,6 +10,7 @@ A simple REST API for managing orders, built with Go, the [chi](https://github.c
 - JSON request and response bodies
 - Redis-backed persistence
 - Graceful shutdown on interrupt
+- Prometheus metrics for HTTP, Redis, and order activity
 
 ## Requirements
 
@@ -140,6 +141,48 @@ Response: `200 OK` on success, or `404 Not Found` if the order does not exist.
 }
 ```
 
+## Metrics
+
+Metrics are exposed in the Prometheus text format at `GET /metrics`.
+
+### HTTP
+
+| Metric                          | Type      | Labels                        |
+| ------------------------------- | --------- | ----------------------------- |
+| `http_requests_total`           | counter   | `method`, `route`, `status`   |
+| `http_request_duration_seconds` | histogram | `method`, `route`, `status`   |
+| `http_requests_in_flight`       | gauge     |                               |
+
+The `route` label uses the route pattern (for example `/orders/{id}`) rather than individual IDs.
+
+### Redis
+
+| Metric                            | Type      | Labels    |
+| --------------------------------- | --------- | --------- |
+| `redis_command_duration_seconds`  | histogram | `command` |
+| `redis_command_errors_total`      | counter   | `command` |
+| `redis_pool_hits_total`           | counter   |           |
+| `redis_pool_misses_total`         | counter   |           |
+| `redis_pool_timeouts_total`       | counter   |           |
+| `redis_pool_conns`                | gauge     |           |
+| `redis_pool_idle_conns`           | gauge     |           |
+| `redis_pool_stale_conns`          | counter   |           |
+
+### Orders
+
+| Metric                     | Type    | Labels    |
+| -------------------------- | ------- | --------- |
+| `orders_created_total`     | counter |           |
+| `orders_create_errors_total` | counter |         |
+| `orders_listed_total`      | counter |           |
+| `orders_lookup_total`      | counter | `result` (`found`, `not_found`) |
+| `orders_updated_total`     | counter | `status` (`shipped`, `completed`) |
+| `orders_deleted_total`     | counter |           |
+
+### Go runtime
+
+The standard Go and process collectors are registered automatically, so `go_*` and `process_*` metrics (goroutines, memory, GC, CPU, file descriptors) are also exposed at `/metrics`.
+
 ## Project structure
 
 ```
@@ -150,6 +193,8 @@ Response: `200 OK` on success, or `404 Not Found` if the order does not exist.
 │   └── routes.go
 ├── handler/           # HTTP handlers
 │   └── order.go
+├── metrics/           # Prometheus collectors and middleware
+│   └── metrics.go
 ├── model/             # Data models
 │   └── order.go
 ├── repository/
