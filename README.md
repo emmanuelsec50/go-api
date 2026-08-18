@@ -152,6 +152,7 @@ Metrics are exposed in the Prometheus text format at `GET /metrics`.
 | `http_requests_total`           | counter   | `method`, `route`, `status`   |
 | `http_request_duration_seconds` | histogram | `method`, `route`, `status`   |
 | `http_requests_in_flight`       | gauge     |                               |
+| `http_requests_per_second`      | gauge     |                               |
 
 The `route` label uses the route pattern (for example `/orders/{id}`) rather than individual IDs.
 
@@ -178,6 +179,18 @@ The `route` label uses the route pattern (for example `/orders/{id}`) rather tha
 | `orders_lookup_total`      | counter | `result` (`found`, `not_found`) |
 | `orders_updated_total`     | counter | `status` (`shipped`, `completed`) |
 | `orders_deleted_total`     | counter |           |
+| `orders_created_per_second` | gauge   |           |
+
+### Request rate
+
+RPS can be derived from the raw counters with PromQL:
+
+- `sum(rate(http_requests_total[1m]))` — overall requests per second
+- `sum by (route) (rate(http_requests_total[1m]))` — requests per second per route
+- `sum by (status) (rate(http_requests_total[5m]))` — requests per second per status code
+- `rate(orders_created_total[1m])` — orders created per second
+
+The exported `*_per_second` gauges are exponentially weighted moving averages with a 1 second time constant. They provide a plain number directly from `/metrics`, which is useful when PromQL is not available. For precise per-second rates over a fixed window, prefer the `rate()` queries above.
 
 ### Go runtime
 

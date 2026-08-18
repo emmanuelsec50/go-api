@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/emmanuelsec50/chi-router/metrics"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,6 +23,9 @@ func New(config Config) *App {
 		}),
 		config: config,
 	}
+
+	app.rdb.AddHook(metrics.RedisHook{})
+	metrics.RegisterRedisPool(app.rdb)
 
 	app.loadRoutes()
 

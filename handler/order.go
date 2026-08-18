@@ -11,6 +11,7 @@ import (
 
 	// "uuid"
 
+	"github.com/emmanuelsec50/chi-router/metrics"
 	"github.com/emmanuelsec50/chi-router/model"
 	"github.com/emmanuelsec50/chi-router/repository/order"
 	"github.com/go-chi/chi/v5"
@@ -43,10 +44,13 @@ func (h *Order) Create(w http.ResponseWriter, r *http.Request) {
 
 	err := h.Repo.Insert(r.Context(), order)
 	if err != nil {
+		metrics.IncOrderCreateError()
 		fmt.Println("failed to insert:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	metrics.IncOrderCreated()
 
 	res, err := json.Marshal(order)
 	if err != nil {
@@ -84,6 +88,8 @@ func (h *Order) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.IncOrderListed()
+
 	var response struct {
 		Items []model.Order `json:"items"`
 		Next  uint64        `json:"next,omitempty"`
@@ -115,6 +121,7 @@ func (h *Order) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	o, err := h.Repo.FindByID(r.Context(), orderID)
 	if errors.Is(err, order.ErrNotExist) {
+		metrics.IncOrderLookup("not_found")
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -122,6 +129,8 @@ func (h *Order) GetByID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	metrics.IncOrderLookup("found")
 
 	if err := json.NewEncoder(w).Encode(o); err != nil {
 		fmt.Println("failed to marshal:", err)
@@ -190,6 +199,8 @@ func (h *Order) UpdateByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.IncOrderUpdated(body.Status)
+
 	if err := json.NewEncoder(w).Encode(theOrder); err != nil {
 		fmt.Println("failed to marshal:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -218,4 +229,6 @@ func (h *Order) DeleteByID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	metrics.IncOrderDeleted()
 }

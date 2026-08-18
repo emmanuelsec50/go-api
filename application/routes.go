@@ -4,19 +4,24 @@ import (
 	"net/http"
 
 	"github.com/emmanuelsec50/chi-router/handler"
+	"github.com/emmanuelsec50/chi-router/metrics"
 	"github.com/emmanuelsec50/chi-router/repository/order"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (a *App) loadRoutes() {
 	router := chi.NewRouter()
 
+	router.Use(metrics.HTTPMiddleware)
 	router.Use(middleware.Logger)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	router.Handle("/metrics", promhttp.Handler())
 
 	router.Route("/orders", a.loadOrderRoutes)
 
