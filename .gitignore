@@ -1,0 +1,28 @@
+# ---- Binaries / build output ----
+chi-router
+chi-router.exe
+*.exe
+*.test
+*.out
+/bin/
+/dist/
+
+# ---- Dependencies ----
+/vendor/
+
+# ---- Environment / secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Logs ----
+*.log
+
+# ---- Editor / OS files ----
+.idea/
+.vscode/
+.DS_Store
+
+# ---- Test coverage ----
+coverage.txt
+coverage.html
