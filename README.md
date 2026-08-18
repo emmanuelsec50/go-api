@@ -1,4 +1,4 @@
-# chi-router
+# Go-API
 
 A simple REST API for managing orders, built with Go, the [chi](https://github.com/go-chi/chi) router, and Redis for storage.
 
