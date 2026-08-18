@@ -14,10 +14,36 @@ A simple REST API for managing orders, built with Go, the [chi](https://github.c
 
 ## Requirements
 
-- Go 1.26 or newer
-- A running Redis instance
+- **With Docker:** only [Docker](https://docs.docker.com/get-docker/) (with Docker Compose)
+- **Without Docker:** Go 1.26 or newer and a running Redis instance
 
 ## Getting started
+
+### Using Docker Compose (recommended)
+
+This starts both the app and Redis together:
+
+```sh
+docker compose up -d --build
+```
+
+The server is then available at `http://localhost:3000`. Stop it with:
+
+```sh
+docker compose down
+```
+
+### Using the published image
+
+Pull the pre-built image from Docker Hub and point it at your Redis:
+
+```sh
+docker run -p 3000:3000 \
+  -e REDIS_ADDR=<your-redis-host>:6379 \
+  helsinki50/go-api:latest
+```
+
+### Without Docker
 
 1. Start Redis (defaults to `localhost:6379`).
 2. Run the server:
@@ -27,6 +53,43 @@ A simple REST API for managing orders, built with Go, the [chi](https://github.c
    ```
 
 The server listens on port `3000` by default.
+
+## Docker
+
+The project ships with a multi-stage [`Dockerfile`](Dockerfile) that produces a small (~10 MB) static image, plus a [`docker-compose.yml`](docker-compose.yml) that wires it to Redis.
+
+- Build the image:
+
+  ```sh
+  docker build -t go-api .
+  ```
+
+- The image runs a single static binary as a non-root user, and everything is configured via environment variables (see [Configuration](#configuration)).
+
+### Docker Hub
+
+Images are published to Docker Hub as [`helsinki50/go-api`](https://hub.docker.com/r/helsinki50/go-api):
+
+```sh
+docker pull helsinki50/go-api:latest
+```
+
+### Continuous delivery
+
+A GitHub Actions workflow ([`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)) builds and pushes the image automatically on every push to `main` and on every `v*` tag.
+
+Tags generated:
+
+| Trigger | Tag |
+| ------- | --- |
+| push to `main` | `latest` |
+| tag `vX.Y.Z` | `vX.Y.Z` |
+| any push | `sha-<commit-hash>` |
+
+The workflow requires two secrets in GitHub → **Settings → Secrets and variables → Actions**:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
 
 ## Configuration
 
@@ -200,21 +263,29 @@ The standard Go and process collectors are registered automatically, so `go_*` a
 
 ```
 .
-├── application/       # App setup, config loading, and route registration
+├── .github/
+│   └── workflows/
+│       └── docker-publish.yml   # CI: build & push image on push/tag
+├── application/                 # App setup, config loading, and route registration
 │   ├── app.go
 │   ├── config.go
 │   └── routes.go
-├── handler/           # HTTP handlers
+├── handler/                     # HTTP handlers
 │   └── order.go
-├── metrics/           # Prometheus collectors and middleware
+├── metrics/                     # Prometheus collectors and middleware
 │   └── metrics.go
-├── model/             # Data models
+├── model/                       # Data models
 │   └── order.go
 ├── repository/
-│   └── order/         # Redis repository
+│   └── order/                   # Redis repository
 │       └── redis.go
-├── main.go            # Entrypoint
-└── go.mod
+├── Dockerfile                   # Multi-stage image build
+├── docker-compose.yml           # App + Redis stack
+├── .dockerignore                # Build-context exclusions
+├── .gitignore                   # Version-control exclusions
+├── main.go                      # Entrypoint
+├── go.mod
+└── go.sum
 ```
 
 ## How storage works
